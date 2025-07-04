@@ -2,3 +2,4 @@ fastapi
 uvicorn
 pydantic
 peewee
+jinja2

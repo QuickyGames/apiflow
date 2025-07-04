@@ -15,12 +15,13 @@ class UserBase(BaseModel):
     email: str
 
 class UserCreate(UserBase):
-    api_token: str
+    api_token: str | None = None
+from datetime import datetime
 
 class User(UserBase):
     id: int
-    date_created: str
-    date_modified: str
+    date_created: datetime
+    date_modified: datetime
     api_token: str
     class Config:
         orm_mode = True
@@ -36,7 +37,8 @@ class JobCreate(JobBase):
 
 class Job(JobBase):
     id: int
-    date_created: str
+    date_created: datetime
+    date_modified: datetime
     runs: int
     owner_id: int
     results: Union[str, None] = None
@@ -53,8 +55,8 @@ class WorkflowCreate(WorkflowBase):
 
 class Workflow(WorkflowBase):
     id: int
-    date_created: str
-    date_modified: str
+    date_created: datetime
+    date_modified: datetime
     runs: int
     owner_id: int
     class Config:
@@ -70,8 +72,8 @@ class NodeCreate(NodeBase):
 
 class Node(NodeBase):
     id: int
-    date_created: str
-    date_modified: str
+    date_created: datetime
+    date_modified: datetime
     owner_id: int
     class Config:
         orm_mode = True

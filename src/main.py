@@ -1,21 +1,23 @@
 import time
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from .lib import crud, database, models, schemas
-from .database import db_state_default
+from .lib.database import db_state_default
 
 # Create database tables
 database.db.connect()
 database.db.create_tables([
     models.User,
-    models.Item,
     models.Job,
     models.Workflow,
     models.Nodes
 ])
 database.db.close()
 
+templates = Jinja2Templates(directory="src/templates")
 app = FastAPI()
 sleep_time = 10
 
@@ -49,15 +51,6 @@ def read_user(user_id: int):
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
-
-@app.post("/users/{user_id}/items/", response_model=schemas.Item, dependencies=[Depends(get_db)])
-def create_item_for_user(user_id: int, item: schemas.ItemCreate):
-    return crud.create_user_item(item=item, user_id=user_id)
-
-@app.get("/items/", response_model=List[schemas.Item], dependencies=[Depends(get_db)])
-def read_items(skip: int = 0, limit: int = 100):
-    items = crud.get_items(skip=skip, limit=limit)
-    return items
 
 # Job endpoints
 @app.post("/jobs/", response_model=schemas.Job, dependencies=[Depends(get_db)])
@@ -150,3 +143,8 @@ def read_slow_users(skip: int = 0, limit: int = 100):
     time.sleep(sleep_time)  # Fake long processing request
     users = crud.get_users(skip=skip, limit=limit)
     return users
+
+
+@app.get("/dashboard/debug", response_class=HTMLResponse)
+async def get_crud_template(request: Request):
+    return templates.TemplateResponse("crud.html", {"request": request})

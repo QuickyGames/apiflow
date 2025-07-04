@@ -16,14 +16,6 @@ def create_user(user: schemas.UserCreate):
     db_user.save()
     return db_user
 
-def get_items(skip: int = 0, limit: int = 100):
-    return list(models.Item.select().offset(skip).limit(limit))
-
-def create_user_item(item: schemas.ItemCreate, user_id: int):
-    db_item = models.Item(**item.dict(), owner_id=user_id)
-    db_item.save()
-    return db_item
-
 # Job CRUD operations
 def get_job(job_id: int):
     return models.Job.filter(models.Job.id == job_id).first()
@@ -37,11 +29,13 @@ def create_job(job: schemas.JobCreate, owner_id: int):
     return db_job
 
 def update_job(job_id: int, job: schemas.JobBase):
+    from datetime import datetime
     db_job = get_job(job_id)
     if not db_job:
         return None
     for key, value in job.dict().items():
         setattr(db_job, key, value)
+    db_job.date_modified = datetime.now()
     db_job.save()
     return db_job
 
@@ -63,11 +57,13 @@ def create_workflow(workflow: schemas.WorkflowCreate, owner_id: int):
     return db_workflow
 
 def update_workflow(workflow_id: int, workflow: schemas.WorkflowBase):
+    from datetime import datetime
     db_workflow = get_workflow(workflow_id)
     if not db_workflow:
         return None
     for key, value in workflow.dict().items():
         setattr(db_workflow, key, value)
+    db_workflow.date_modified = datetime.now()
     db_workflow.save()
     return db_workflow
 
@@ -89,11 +85,13 @@ def create_node(node: schemas.NodeCreate, owner_id: int):
     return db_node
 
 def update_node(node_id: int, node: schemas.NodeBase):
+    from datetime import datetime
     db_node = get_node(node_id)
     if not db_node:
         return None
     for key, value in node.dict().items():
         setattr(db_node, key, value)
+    db_node.date_modified = datetime.now()
     db_node.save()
     return db_node
 
