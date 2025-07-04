@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CRUD Operations</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2 { color: #333; }
+        form { max-width: 600px; margin-bottom: 20px; }
+        label { display: block; margin-top: 10px; }
+        input[type="text"], textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+
+<h1>CRUD Operations</h1>
+
+<!-- User CRUD -->
+<h2>User Operations</h2>
+<form id="create-user-form">
+    <label for="user-email">Email:</label>
+    <input type="text" id="user-email" name="email" required>
+    <button type="submit">Create User</button>
+</form>
+
+<!-- Node CRUD -->
+<h2>Node Operations</h2>
+<form id="create-node-form">
+    <label for="node-name">Name:</label>
+    <input type="text" id="node-name" name="name" required>
+    <label for="node-content">Content:</label>
+    <textarea id="node-content" name="content" rows="4" required></textarea>
+    <button type="submit">Create Node</button>
+</form>
+
+<!-- Workflow CRUD -->
+<h2>Workflow Operations</h2>
+<form id="create-workflow-form">
+    <label for="workflow-name">Name:</label>
+    <input type="text" id="workflow-name" name="name" required>
+    <label for="workflow-content">Content:</label>
+    <textarea id="workflow-content" name="content" rows="4" required></textarea>
+    <button type="submit">Create Workflow</button>
+</form>
+
+<script>
+document.getElementById('create-user-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('user-email').value;
+
+    fetch('/users/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => alert(`User created with ID: ${data.id}`))
+    .catch(error => console.error('Error:', error));
+});
+
+document.getElementById('create-node-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('node-name').value;
+    const content = document.getElementById('node-content').value;
+
+    fetch('/nodes/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, content: content })
+    })
+    .then(response => response.json())
+    .then(data => alert(`Node created with ID: ${data.id}`))
+    .catch(error => console.error('Error:', error));
+});
+
+document.getElementById('create-workflow-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('workflow-name').value;
+    const content = document.getElementById('workflow-content').value;
+
+    fetch('/workflows/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, content: content })
+    })
+    .then(response => response.json())
+    .then(data => alert(`Workflow created with ID: ${data.id}`))
+    .catch(error => console.error('Error:', error));
+});
+</script>
+
+</body>
+</html>
