@@ -52,6 +52,10 @@ def read_user(user_id: int):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
+@app.delete("/users/{user_id}", dependencies=[Depends(get_db)])
+def delete_user(user_id: int):
+    crud.delete_user(user_id=user_id)
+
 # Job endpoints
 @app.post("/jobs/", response_model=schemas.Job, dependencies=[Depends(get_db)])
 def create_job(job: schemas.JobCreate, owner_id: int):

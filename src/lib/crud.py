@@ -16,6 +16,11 @@ def create_user(user: schemas.UserCreate):
     db_user.save()
     return db_user
 
+def delete_user(user_id: int):
+    db_user = get_user(user_id)
+    if db_user:
+        db_user.delete_instance()
+
 # Job CRUD operations
 def get_job(job_id: int):
     return models.Job.filter(models.Job.id == job_id).first()

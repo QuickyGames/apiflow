@@ -10,7 +10,6 @@ class PeeweeGetterDict(GetterDict):
             return list(res)
         return res
 
-
 class UserBase(BaseModel):
     email: str
 
@@ -51,7 +50,6 @@ class WorkflowBase(BaseModel):
 
 class WorkflowCreate(WorkflowBase):
     content: str
-    owner_id: int
 
 class Workflow(WorkflowBase):
     id: int
@@ -68,7 +66,6 @@ class NodeBase(BaseModel):
 
 class NodeCreate(NodeBase):
     content: str
-    owner_id: int
 
 class Node(NodeBase):
     id: int
