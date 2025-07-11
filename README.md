@@ -81,7 +81,6 @@ input:
         ],
         "description": "string"
     }
-
 ]
 ```
 
@@ -109,17 +108,33 @@ output:
         "mapping": "string",
         "description": "string"
     }
-
 ]
 ```
 
 **workflows**
 
-node (Directed acyclic graph)
 ```json
 {
-    "nodes": [
-        
+    "summary": "string",
+    "description": "string",
+    "schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+    },
+    "value": {
+        "modules": [
+            {
+                "id": "string",
+                "summary": "string",
+                "value": {
+                    "type": "script",
+                    "path": "connector/node_path",
+                    "input_transforms": {}
+                }
+            }
+        ]
+    }
 }
 ```
 
@@ -186,18 +201,18 @@ auth: Bearer <token>
         {
             "name": "output_image",
             "type": "string",
-            "required": true,
             "default": "",
             "mapping": "output",
             "description": "The output image URL"
         }
-    ],
+    ]
+}
 ```
 
 **Declare a workflow**
 
 The workflow will call kontext node twice,
-onece with promt "Add a Hat to person",
+once with prompt "Add a Hat to person",
 and once with prompt "Make this a 90s cartoon"
 
 POST /api/v1/workflows
@@ -207,4 +222,305 @@ auth: Bearer <token>
     "name": "Replicate Flux Kontext Pro Workflow",
     "description": "A workflow that uses the Replicate Flux Kontext Pro node",
     "nodes": {
-        "nodes": [
+        "summary": "Replicate Flux Kontext Pro Workflow",
+        "description": "A workflow that processes an image with two different prompts sequentially",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "input_image": {
+                    "type": "string",
+                    "description": "The input image to process"
+                }
+            },
+            "required": ["input_image"]
+        },
+        "value": {
+            "modules": [
+                {
+                    "id": "add_hat_step",
+                    "summary": "Add Hat to Person",
+                    "value": {
+                        "type": "script",
+                        "path": "node/replicate_flux_kontext_pro_node_id",
+                        "input_transforms": {
+                            "prompt": {
+                                "type": "static",
+                                "value": "Add a Hat to person"
+                            },
+                            "input_image": {
+                                "type": "javascript",
+                                "expr": "flow_input.input_image"
+                            },
+                            "aspect_ratio": {
+                                "type": "static",
+                                "value": "match_input_image"
+                            }
+                        }
+                    }
+                },
+                {
+                    "id": "cartoon_step",
+                    "summary": "Make 90s Cartoon",
+                    "value": {
+                        "type": "script",
+                        "path": "node/replicate_flux_kontext_pro_node_id",
+                        "input_transforms": {
+                            "prompt": {
+                                "type": "static",
+                                "value": "Make this a 90s cartoon"
+                            },
+                            "input_image": {
+                                "type": "javascript",
+                                "expr": "results.add_hat_step.output_image"
+                            },
+                            "aspect_ratio": {
+                                "type": "static",
+                                "value": "match_input_image"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+
+## Advanced OpenFlow Features
+
+**Conditional Processing with BranchOne:**
+```json
+{
+    "name": "Conditional Image Processing",
+    "description": "Process image based on condition",
+    "nodes": {
+        "summary": "Conditional Image Processing",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "input_image": {"type": "string"},
+                "processing_type": {"type": "string", "enum": ["cartoon", "vintage", "cyberpunk"]}
+            },
+            "required": ["input_image", "processing_type"]
+        },
+        "value": {
+            "modules": [
+                {
+                    "id": "conditional_processing",
+                    "summary": "Choose Processing Type",
+                    "value": {
+                        "type": "branchone",
+                        "branches": [
+                            {
+                                "expr": "flow_input.processing_type === 'cartoon'",
+                                "summary": "Cartoon Processing",
+                                "modules": [
+                                    {
+                                        "id": "cartoon_node",
+                                        "value": {
+                                            "type": "script",
+                                            "path": "node/replicate_flux_kontext_pro_node_id",
+                                            "input_transforms": {
+                                                "prompt": {"type": "static", "value": "Make this a 90s cartoon"},
+                                                "input_image": {"type": "javascript", "expr": "flow_input.input_image"}
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "expr": "flow_input.processing_type === 'vintage'",
+                                "summary": "Vintage Processing",
+                                "modules": [
+                                    {
+                                        "id": "vintage_node",
+                                        "value": {
+                                            "type": "script",
+                                            "path": "node/replicate_flux_kontext_pro_node_id",
+                                            "input_transforms": {
+                                                "prompt": {"type": "static", "value": "Make this vintage style"},
+                                                "input_image": {"type": "javascript", "expr": "flow_input.input_image"}
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        "default": [
+                            {
+                                "id": "default_processing",
+                                "value": {
+                                    "type": "script",
+                                    "path": "node/replicate_flux_kontext_pro_node_id",
+                                    "input_transforms": {
+                                        "prompt": {"type": "static", "value": "Enhance this image"},
+                                        "input_image": {"type": "javascript", "expr": "flow_input.input_image"}
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+
+**Parallel Processing with BranchAll:**
+```json
+{
+    "name": "Parallel Style Processing",
+    "description": "Process image with multiple styles in parallel",
+    "nodes": {
+        "summary": "Parallel Style Processing",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "input_image": {"type": "string"}
+            },
+            "required": ["input_image"]
+        },
+        "value": {
+            "modules": [
+                {
+                    "id": "parallel_styles",
+                    "summary": "Generate Multiple Styles",
+                    "value": {
+                        "type": "branchall",
+                        "parallel": true,
+                        "branches": [
+                            {
+                                "summary": "Cyberpunk Style",
+                                "modules": [
+                                    {
+                                        "id": "cyberpunk_style",
+                                        "value": {
+                                            "type": "script",
+                                            "path": "node/replicate_flux_kontext_pro_node_id",
+                                            "input_transforms": {
+                                                "prompt": {"type": "static", "value": "Make this cyberpunk style"},
+                                                "input_image": {"type": "javascript", "expr": "flow_input.input_image"}
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "summary": "Vintage Style",
+                                "modules": [
+                                    {
+                                        "id": "vintage_style",
+                                        "value": {
+                                            "type": "script",
+                                            "path": "node/replicate_flux_kontext_pro_node_id",
+                                            "input_transforms": {
+                                                "prompt": {"type": "static", "value": "Make this vintage style"},
+                                                "input_image": {"type": "javascript", "expr": "flow_input.input_image"}
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+
+**Retry Logic:**
+```json
+{
+    "name": "Reliable Processing",
+    "description": "Process with retry logic",
+    "nodes": {
+        "summary": "Reliable Processing",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "input_image": {"type": "string"},
+                "prompt": {"type": "string"}
+            },
+            "required": ["input_image", "prompt"]
+        },
+        "value": {
+            "modules": [
+                {
+                    "id": "reliable_processing",
+                    "summary": "Process with Retry",
+                    "retry": {
+                        "exponential": {
+                            "attempts": 3,
+                            "multiplier": 2,
+                            "seconds": 5
+                        }
+                    },
+                    "value": {
+                        "type": "script",
+                        "path": "node/replicate_flux_kontext_pro_node_id",
+                        "input_transforms": {
+                            "prompt": {"type": "javascript", "expr": "flow_input.prompt"},
+                            "input_image": {"type": "javascript", "expr": "flow_input.input_image"}
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+
+
+## Execution API
+
+**Run a node**
+ex: node/replicate_flux_kontext_pro_node_id
+
+POST /api/v1/node/{node_id}/run
+auth: Bearer <token>
+```json
+{
+    "input": {
+        "prompt": "Make this a 90s cartoon",
+        "input_image": "https://replicate.delivery/pbxt/N55l5TWGh8mSlNzW8usReoaNhGbFwvLeZR3TX1NL4pd2Wtfv/replicate-prediction-f2d25rg6gnrma0cq257vdw2n4c.png",
+        "aspect_ratio": "match_input_image"
+    }
+}
+```
+
+**Run a workflow**
+POST /api/v1/workflow/{workflow_id}/run
+auth: Bearer <token>
+```json
+{
+    "input": {
+        "input_image": "https://replicate.delivery/pbxt/N55l5TWGh8mSlNzW8usReoaNhGbFwvLeZR3TX1NL4pd2Wtfv/replicate-prediction-f2d25rg6gnrma0cq257vdw2n4c.png"
+    }
+}
+```
+
+Will create a job for the workflow, and run it.
+
+
+## Jobs API
+
+**Get all jobs**
+GET /api/v1/jobs
+auth: Bearer <token>
+
+**Get a job by ID**
+GET /api/v1/jobs/{job_id}
+auth: Bearer <token>
+
+**Get jobs by workflow ID**
+GET /api/v1/workflow/{workflow_id}/jobs
+auth: Bearer <token>
+
+**Cancel a job**
+POST /api/v1/jobs/{job_id}/cancel
+auth: Bearer <token>
+
+
