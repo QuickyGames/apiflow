@@ -1,20 +1,35 @@
-# Use an official Python runtime as a parent image
+# Backend Dockerfile
 FROM python:3.10-slim
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install any needed packages specified in requirements.txt
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 80 available to the world outside this container
-EXPOSE 80
+# Copy backend code
+COPY backend/ ./backend/
 
-# Define environment variable
-ENV NAME FastAPIApp
+# Create a startup script
+RUN echo '#!/bin/bash\n\
+if [ "$SERVICE_TYPE" = "worker" ]; then\n\
+    echo "Starting worker..."\n\
+    python -m backend.worker\n\
+else\n\
+    echo "Starting API server..."\n\
+    uvicorn backend.api:app --host 0.0.0.0 --port 8000 --reload\n\
+fi' > /app/start.sh && chmod +x /app/start.sh
 
-# Run app.py when the container launches
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
+# Expose port for API
+EXPOSE 8000
+
+# Run the startup script
+CMD ["/app/start.sh"]
