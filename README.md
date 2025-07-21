@@ -2,7 +2,16 @@
 Api proxy and workflow for media applications
 
 
+## Stack
+**worker**: Python, Peewee
+**api**: Python, FastAPI, Peewee
+**frontend**: Svelte 5, TailwindCSS,
+
+all in a docker containers with docker-compose.
+
 ## Db structure
+
+`backend/lib/db.py`
 
 **Connectors**
 
@@ -473,8 +482,204 @@ auth: Bearer <token>
 }
 ```
 
+## API
 
-## Execution API
+### Connectors
+**Get all connectors**
+GET /api/v1/connectors
+auth: Bearer <token>
+**Get a connector by ID**
+GET /api/v1/connectors/{connector_id}
+auth: Bearer <token>
+**Create a connector**
+POST /api/v1/connectors
+auth: Bearer <token>
+```json
+{
+    "name": "string",
+    "base_url": "string",
+    "method": "GET/POST/PUT/DELETE",
+    "header": {
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+    },
+    "body": {
+        "key": "value"
+    }
+}
+```
+
+**Update a connector**
+PATCH /api/v1/connectors/{connector_id}
+auth: Bearer <token>
+```json
+{
+    "name": "string",
+    "base_url": "string",
+    "method": "GET/POST/PUT/DELETE",
+    "header": {
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+    },
+    "body": {
+        "key": "value"
+    }
+}
+```
+
+**Delete a connector**
+DELETE /api/v1/connectors/{connector_id}
+auth: Bearer <token>
+
+
+### Nodes
+**Get all nodes**
+GET /api/v1/nodes
+auth: Bearer <token>
+**Get a node by ID**
+GET /api/v1/nodes/{node_id}
+auth: Bearer <token>
+**Create a node**
+POST /api/v1/nodes
+auth: Bearer <token>
+```json
+{
+    "name": "string",
+    "description": "string",
+    "connector_id": "connector_id",
+    "input": [
+        {
+            "name": "string",
+            "type": "string",
+            "required": true,
+            "default": "string",
+            "value": "string",
+            "description": "string"
+        }
+    ],
+    "output": [
+        {
+            "name": "string",
+            "type": "string",
+            "default": "",
+            "mapping": "output",
+            "description": "string"
+        }
+    ]
+}
+```
+
+**Update a node**
+PATCH /api/v1/nodes/{node_id}
+auth: Bearer <token>
+```json
+{
+    "name": "string",
+    "description": "string",
+    "connector_id": "connector_id",
+    "input": [
+        {
+            "name": "string",
+            "type": "string",
+            "required": true,
+            "default": "string",
+            "value": "string",
+            "description": "string"
+        }
+    ],
+    "output": [
+        {
+            "name": "string",
+            "type": "string",
+            "default": "",
+            "mapping": "output",
+            "description": "string"
+        }
+    ]
+}
+```
+
+**Delete a node**
+DELETE /api/v1/nodes/{node_id}
+auth: Bearer <token>
+
+
+### Workflows
+**Get all workflows**
+GET /api/v1/workflows
+auth: Bearer <token>
+**Get a workflow by ID**
+GET /api/v1/workflows/{workflow_id}
+auth: Bearer <token>
+**Create a workflow**
+POST /api/v1/workflows
+auth: Bearer <token>
+```json
+{
+    "name": "string",
+    "description": "string",
+    "nodes": {
+        "summary": "string",
+        "description": "string",
+        "schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "value": {
+            "modules": [
+                {
+                    "id": "string",
+                    "summary": "string",
+                    "value": {
+                        "type": "script",
+                        "path": "connector/node_path",
+                        "input_transforms": {}
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+**Update a workflow**
+PATCH /api/v1/workflows/{workflow_id}
+auth: Bearer <token>
+```json
+{
+    "name": "string",
+    "description": "string",
+    "nodes": {
+        "summary": "string",
+        "description": "string",
+        "schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "value": {
+            "modules": [
+                {
+                    "id": "string",
+                    "summary": "string",
+                    "value": {
+                        "type": "script",
+                        "path": "connector/node_path",
+                        "input_transforms": {}
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+**Delete a workflow**
+DELETE /api/v1/workflows/{workflow_id}
+auth: Bearer <token>
+
+
+
+### Execution
 
 **Run a node**
 ex: node/replicate_flux_kontext_pro_node_id
@@ -505,7 +710,8 @@ auth: Bearer <token>
 Will create a job for the workflow, and run it.
 
 
-## Jobs API
+
+### Jobs
 
 **Get all jobs**
 GET /api/v1/jobs
@@ -524,3 +730,85 @@ POST /api/v1/jobs/{job_id}/cancel
 auth: Bearer <token>
 
 
+### User
+
+**Get user info**
+GET /api/v1/user/{user_id}
+auth: Bearer <token>
+
+**Update user info**
+PATCH /api/v1/user
+auth: Bearer <token>
+```json
+{
+    "username": "new_username",
+    "email": "email",
+}
+```
+
+**Reset token**
+POST /api/v1/user/{user_id}/reset_token
+auth: Bearer <token>
+
+returns a new token for the user.
+
+**Delete user account**
+DELETE /api/v1/user
+auth: Bearer <token>
+
+
+## ENVS (.env and .env.example)
+```
+PUBLIC_API_URL=http://localhost:8000
+ADMIN_LOGIN=admin
+ADMIN_PASSWORD=admin
+```
+
+
+## Frontend
+
+The frontend helps the user to create workflows, nodes, and connectors.
+Also to run them, and see the results.
+
+check `docs/svelvet.md` for more details on the node libarary used in the frontend.
+
+Dont hesitate to create component per type of node, connector, or workflow.
+ex :
+- ConnectorCard.svelte
+- ConnectorForm.svelte
+- and so on...
+
+**/connectors**
+- List all connectors
+- Create a new connector (modal)
+- Edit a connector (modal)
+- Delete a connector
+
+**/nodes**
+- List all nodes
+- Create a new node (modal)
+- Edit a node (modal)
+- Delete a node
+
+**/workflows**
+- List all workflows
+- Create a new workflow (modal)
+  - Select nodes from a list
+  - Configure input/output for each node
+  - Side by side editor json editor and sveltet node preview
+- Edit a workflow (modal)
+- Delete a workflow
+
+**/jobs**
+- List all jobs
+- View job details
+  - Sveltet node preview (where we can see on which node the job is running)
+- Cancel a job
+- Run a job
+
+**/user**
+- List users
+- View user details
+- Edit user details (modal)
+  - Click to reset token 
+- Delete user account (modal)
