@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-apiflow}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -30,6 +30,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/apiflow}
       ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      PYTHONUNBUFFERED: 1
     volumes:
       - ./backend:/app/backend
     depends_on:
@@ -45,6 +46,7 @@ services:
     environment:
       SERVICE_TYPE: worker
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/apiflow}
+      PYTHONUNBUFFERED: 1
     volumes:
       - ./backend:/app/backend
     depends_on:
@@ -70,5 +72,3 @@ services:
       - api
     restart: unless-stopped
 
-volumes:
-  postgres_data:

@@ -107,6 +107,7 @@ def init_admin_user():
     try:
         admin_user = User.get(User.username == admin_login)
         print(f"Admin user '{admin_login}' already exists")
+        print(f"Admin API token: {admin_user.api_token}")
     except User.DoesNotExist:
         admin_user = User.create(
             username=admin_login,
@@ -115,6 +116,7 @@ def init_admin_user():
             api_token=generate_api_token(),
             is_admin=True
         )
-        print(f"Created admin user '{admin_login}' with token: {admin_user.api_token}")
+        print(f"Created admin user '{admin_login}'")
+        print(f"Admin API token: {admin_user.api_token}")
     
     return admin_user

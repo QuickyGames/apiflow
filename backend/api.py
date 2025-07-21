@@ -99,9 +99,16 @@ async def startup():
     create_tables()
     
     # Initialize admin user
-    init_admin_user()
+    admin_user = init_admin_user()
     
+    print("=" * 60)
     print("APIFlow API started successfully!")
+    print("=" * 60)
+    print(f"Admin username: {admin_user.username}")
+    print(f"Admin API token: {admin_user.api_token}")
+    print("=" * 60)
+    print("Use this token to authenticate API requests")
+    print("=" * 60)
 
 # Health check
 @app.get("/health")

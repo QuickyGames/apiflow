@@ -78,11 +78,14 @@
 
       <div class="text-sm text-center">
         <p class="text-gray-600">
-          Don't have an API token? Check the logs when starting the application:
+          Don't have an API token? Check the API logs when starting the application:
         </p>
         <code class="mt-2 block bg-gray-100 p-2 rounded text-xs">
-          docker-compose logs api | grep "token"
+          docker-compose logs api | grep "Admin API token"
         </code>
+        <p class="mt-2 text-gray-500 text-xs">
+          Default admin credentials are set in your .env file
+        </p>
       </div>
     </form>
   </div>

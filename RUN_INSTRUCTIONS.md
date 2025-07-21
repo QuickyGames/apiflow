@@ -35,7 +35,12 @@ This will start:
 
 5. On first run, check the API logs for the admin API token:
 ```bash
-docker-compose logs api | grep "token"
+docker-compose logs api | grep "Admin API token"
+```
+
+The output will show something like:
+```
+api_1  | Admin API token: YOUR_TOKEN_HERE
 ```
 
 ## Accessing the Application
@@ -46,11 +51,11 @@ docker-compose logs api | grep "token"
 
 ## Using the Application
 
-### 1. Set API Token
-First, you need to set your API token in the frontend:
-1. Go to http://localhost:3000/users
-2. Copy your API token
-3. The frontend will use this token for all API requests
+### 1. Login with API Token
+1. Go to http://localhost:3000
+2. You'll be redirected to the login page
+3. Enter the admin API token from the logs
+4. Click "Sign in"
 
 ### 2. Create a Connector
 Connectors define API endpoints:
