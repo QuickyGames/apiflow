@@ -55,6 +55,7 @@ class Node(BaseModel):
     name = CharField()
     description = TextField()
     connector = ForeignKeyField(Connector, backref='nodes')
+    path = CharField(default='')  # Path to append to connector base_url
     input = JSONField(default=list)
     output = JSONField(default=list)
     data = JSONField(default=dict)
@@ -96,6 +97,23 @@ class Job(BaseModel):
 def create_tables():
     with db:
         db.create_tables([User, Connector, Node, Workflow, Job])
+        # Run migrations after creating tables
+        run_migrations()
+
+def run_migrations():
+    """Run database migrations"""
+    try:
+        # Check if the 'path' column exists in the Node table
+        cursor = db.execute_sql("SELECT column_name FROM information_schema.columns WHERE table_name='node' AND column_name='path';")
+        if not cursor.fetchone():
+            print("Adding 'path' column to Node table...")
+            db.execute_sql("ALTER TABLE node ADD COLUMN path VARCHAR(255) DEFAULT '';")
+            print("Successfully added 'path' column to Node table.")
+        else:
+            print("Column 'path' already exists in Node table.")
+    except Exception as e:
+        print(f"Migration warning: {e}")
+        # Don't fail if migration has issues, just log it
 
 def init_admin_user():
     """Initialize admin user from environment variables"""

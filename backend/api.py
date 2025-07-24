@@ -36,6 +36,7 @@ class NodeCreate(BaseModel):
     name: str
     description: str
     connector_id: int
+    path: str = ""
     input: list = Field(default_factory=list)
     output: list = Field(default_factory=list)
     data: dict = Field(default_factory=dict)
@@ -44,6 +45,7 @@ class NodeUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     connector_id: Optional[int] = None
+    path: Optional[str] = None
     input: Optional[list] = None
     output: Optional[list] = None
     data: Optional[dict] = None
@@ -229,6 +231,7 @@ async def get_nodes(current_user: User = Depends(get_current_user)):
             "name": n.name,
             "description": n.description,
             "connector_id": n.connector.id,
+            "path": n.path,
             "input": n.input,
             "output": n.output,
             "data": n.data,
@@ -247,6 +250,7 @@ async def get_node(node_id: int, current_user: User = Depends(get_current_user))
             "name": node.name,
             "description": node.description,
             "connector_id": node.connector.id,
+            "path": node.path,
             "input": node.input,
             "output": node.output,
             "data": node.data,
@@ -270,6 +274,7 @@ async def create_node(
         name=node.name,
         description=node.description,
         connector=connector,
+        path=node.path,
         input=node.input,
         output=node.output,
         data=node.data
@@ -280,6 +285,7 @@ async def create_node(
         "name": new_node.name,
         "description": new_node.description,
         "connector_id": new_node.connector.id,
+        "path": new_node.path,
         "input": new_node.input,
         "output": new_node.output,
         "data": new_node.data,
@@ -306,6 +312,8 @@ async def update_node(
                 node.connector = connector
             except Connector.DoesNotExist:
                 raise HTTPException(status_code=400, detail="Connector not found")
+        if update.path is not None:
+            node.path = update.path
         if update.input is not None:
             node.input = update.input
         if update.output is not None:
@@ -320,6 +328,7 @@ async def update_node(
             "name": node.name,
             "description": node.description,
             "connector_id": node.connector.id,
+            "path": node.path,
             "input": node.input,
             "output": node.output,
             "data": node.data,

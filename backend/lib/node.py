@@ -2,8 +2,13 @@ import json
 import requests
 import re
 import os
+import logging
 from typing import Any, Dict, List
 from backend.lib.db import Node, Connector
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class NodeExecutor:
     def __init__(self, node: Node):
@@ -16,9 +21,29 @@ class NodeExecutor:
         
         for input_def in self.node.input:
             name = input_def['name']
+            input_type = input_def.get('type', 'string')
             
-            if name in provided_input:
-                prepared[name] = provided_input[name]
+            # Check if value is provided and not empty
+            if name in provided_input and provided_input[name] != '':
+                value = provided_input[name]
+                
+                # Type conversion for specific types
+                if input_type == 'boolean':
+                    if isinstance(value, str):
+                        value = value.lower() in ('true', '1', 'yes', 'on')
+                    else:
+                        value = bool(value)
+                elif input_type == 'integer':
+                    if isinstance(value, str) and value.isdigit():
+                        value = int(value)
+                elif input_type == 'number':
+                    if isinstance(value, str):
+                        try:
+                            value = float(value)
+                        except ValueError:
+                            pass
+                
+                prepared[name] = value
             elif input_def.get('required', False):
                 if 'default' in input_def:
                     prepared[name] = input_def['default']
@@ -54,27 +79,36 @@ class NodeExecutor:
         return template
     
     def build_request_url(self, input_data: Dict[str, Any]) -> str:
-        """Build the full request URL"""
-        base_url = self.connector.base_url
+        """Build the full request URL by combining connector base_url with node path"""
+        base_url = self.connector.base_url.rstrip('/')
+        node_path = self.node.path.strip()
         
-        # Handle path parameters if needed
-        if 'path' in input_data:
-            if not base_url.endswith('/'):
-                base_url += '/'
-            base_url += input_data['path']
+        # Combine base URL with node path
+        if node_path:
+            if not node_path.startswith('/'):
+                node_path = '/' + node_path
+            full_url = base_url + node_path
+        else:
+            full_url = base_url
         
-        return base_url
+        logger.info(f"Building URL: base_url='{base_url}', node_path='{self.node.path}', full_url='{full_url}'")
+        return full_url
     
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute the node with given input"""
+        logger.info(f"Executing node '{self.node.name}' (ID: {self.node.id})")
+        logger.info(f"Input data: {input_data}")
+        
         # Prepare input
         prepared_input = self.prepare_input(input_data)
+        logger.info(f"Prepared input: {prepared_input}")
         
         # Build request
         url = self.build_request_url(prepared_input)
         
         # Prepare headers with variable substitution
         headers = self.substitute_variables(self.connector.header, prepared_input)
+        logger.info(f"Request headers: {headers}")
         
         # Prepare body
         body = None
@@ -83,7 +117,11 @@ class NodeExecutor:
                 body = self.substitute_variables(self.connector.body, prepared_input)
             else:
                 # Use input data as body
-                body = prepared_input
+                body = {"input": prepared_input}  # Wrap in input object for Replicate API
+        
+        logger.info(f"Request method: {self.connector.method}")
+        logger.info(f"Request URL: {url}")
+        logger.info(f"Request body: {body}")
         
         # Make request
         try:
@@ -95,10 +133,17 @@ class NodeExecutor:
                 timeout=300  # 5 minutes timeout
             )
             
+            logger.info(f"Response status code: {response.status_code}")
+            logger.info(f"Response headers: {dict(response.headers)}")
+            
+            if response.content:
+                logger.info(f"Response content: {response.text[:1000]}...")  # Log first 1000 chars
+            
             response.raise_for_status()
             
             # Parse response
             result = response.json() if response.content else {}
+            logger.info(f"Parsed response: {result}")
             
             # Map outputs
             output = {}
@@ -116,12 +161,18 @@ class NodeExecutor:
                         break
                 
                 output[name] = value
+                logger.info(f"Mapped output '{name}': {value}")
             
+            logger.info(f"Final output: {output}")
             return output
             
         except requests.exceptions.RequestException as e:
+            logger.error(f"Request failed: {str(e)}")
+            logger.error(f"Response status: {getattr(e.response, 'status_code', 'N/A')}")
+            logger.error(f"Response text: {getattr(e.response, 'text', 'N/A')}")
             raise Exception(f"Request failed: {str(e)}")
         except Exception as e:
+            logger.error(f"Node execution failed: {str(e)}")
             raise Exception(f"Node execution failed: {str(e)}")
 
 

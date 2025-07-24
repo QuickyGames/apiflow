@@ -14,6 +14,11 @@
     </h3>
     <div class="mt-2 max-w-xl text-sm text-gray-500">
       <p>{node.description}</p>
+      {#if node.path}
+        <p class="mt-1 font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+          Path: {node.path}
+        </p>
+      {/if}
     </div>
     
     <div class="mt-3">

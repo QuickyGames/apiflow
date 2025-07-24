@@ -16,6 +16,7 @@ export interface Node {
   name: string;
   description: string;
   connector_id: number;
+  path: string;
   input: any[];
   output: any[];
   data: Record<string, any>;

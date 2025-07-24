@@ -7,6 +7,7 @@
     name: '',
     description: '',
     connector_id: 0,
+    path: '',
     input: [],
     output: [],
     data: {}
@@ -106,6 +107,22 @@
         </option>
       {/each}
     </select>
+  </div>
+
+  <div>
+    <label for="path" class="block text-sm font-medium text-gray-700">
+      Path
+    </label>
+    <input
+      type="text"
+      id="path"
+      bind:value={node.path}
+      placeholder="/models/black-forest-labs/flux-pro/predictions"
+      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+    />
+    <p class="mt-1 text-sm text-gray-500">
+      Path to append to the connector's base URL. Leave empty to use base URL only.
+    </p>
   </div>
 
   <div>
