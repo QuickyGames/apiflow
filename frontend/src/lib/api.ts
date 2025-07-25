@@ -20,6 +20,7 @@ export interface Node {
   input: any[];
   output: any[];
   data: Record<string, any>;
+  body_template: Record<string, any>;
   created_at: string;
   updated_at: string;
 }

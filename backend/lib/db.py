@@ -59,6 +59,7 @@ class Node(BaseModel):
     input = JSONField(default=list)
     output = JSONField(default=list)
     data = JSONField(default=dict)
+    body_template = JSONField(default=dict)  # Template for request body transformation
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
 
@@ -111,6 +112,15 @@ def run_migrations():
             print("Successfully added 'path' column to Node table.")
         else:
             print("Column 'path' already exists in Node table.")
+            
+        # Check if the 'body_template' column exists in the Node table
+        cursor = db.execute_sql("SELECT column_name FROM information_schema.columns WHERE table_name='node' AND column_name='body_template';")
+        if not cursor.fetchone():
+            print("Adding 'body_template' column to Node table...")
+            db.execute_sql("ALTER TABLE node ADD COLUMN body_template JSON DEFAULT '{}';")
+            print("Successfully added 'body_template' column to Node table.")
+        else:
+            print("Column 'body_template' already exists in Node table.")
     except Exception as e:
         print(f"Migration warning: {e}")
         # Don't fail if migration has issues, just log it

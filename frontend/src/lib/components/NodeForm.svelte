@@ -10,7 +10,8 @@
     path: '',
     input: [],
     output: [],
-    data: {}
+    data: {},
+    body_template: {}
   };
   export let onSubmit: (data: Partial<Node>) => void;
   export let onCancel: () => void;
@@ -19,9 +20,11 @@
   let inputJson = JSON.stringify(node.input || [], null, 2);
   let outputJson = JSON.stringify(node.output || [], null, 2);
   let dataJson = JSON.stringify(node.data || {}, null, 2);
+  let bodyTemplateJson = JSON.stringify(node.body_template || {}, null, 2);
   let inputError = '';
   let outputError = '';
   let dataError = '';
+  let bodyTemplateError = '';
   
   onMount(async () => {
     try {
@@ -38,6 +41,7 @@
     inputError = '';
     outputError = '';
     dataError = '';
+    bodyTemplateError = '';
     
     try {
       node.input = JSON.parse(inputJson);
@@ -57,6 +61,13 @@
       node.data = JSON.parse(dataJson);
     } catch (e) {
       dataError = 'Invalid JSON';
+      return;
+    }
+    
+    try {
+      node.body_template = JSON.parse(bodyTemplateJson);
+    } catch (e) {
+      bodyTemplateError = 'Invalid JSON';
       return;
     }
     
@@ -171,6 +182,25 @@
     {#if dataError}
       <p class="mt-1 text-sm text-red-600">{dataError}</p>
     {/if}
+  </div>
+
+  <div>
+    <label for="body_template" class="block text-sm font-medium text-gray-700">
+      Body Template (JSON)
+    </label>
+    <textarea
+      id="body_template"
+      bind:value={bodyTemplateJson}
+      rows="6"
+      placeholder={'{"input": {"prompt": "$prompt", "steps": "$steps"}} or {"model": "$model", "messages": "$messages"}'}
+      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono text-xs"
+    />
+    {#if bodyTemplateError}
+      <p class="mt-1 text-sm text-red-600">{bodyTemplateError}</p>
+    {/if}
+    <p class="mt-1 text-sm text-gray-500">
+      Optional custom request body template. Use $variable_name to substitute input values. Leave empty to use default behavior.
+    </p>
   </div>
 
   <div class="flex justify-end space-x-3">

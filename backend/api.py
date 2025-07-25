@@ -40,6 +40,7 @@ class NodeCreate(BaseModel):
     input: list = Field(default_factory=list)
     output: list = Field(default_factory=list)
     data: dict = Field(default_factory=dict)
+    body_template: dict = Field(default_factory=dict)
 
 class NodeUpdate(BaseModel):
     name: Optional[str] = None
@@ -49,6 +50,7 @@ class NodeUpdate(BaseModel):
     input: Optional[list] = None
     output: Optional[list] = None
     data: Optional[dict] = None
+    body_template: Optional[dict] = None
 
 class WorkflowCreate(BaseModel):
     name: str
@@ -235,6 +237,7 @@ async def get_nodes(current_user: User = Depends(get_current_user)):
             "input": n.input,
             "output": n.output,
             "data": n.data,
+            "body_template": getattr(n, 'body_template', {}),
             "created_at": n.created_at,
             "updated_at": n.updated_at
         }
@@ -254,6 +257,7 @@ async def get_node(node_id: int, current_user: User = Depends(get_current_user))
             "input": node.input,
             "output": node.output,
             "data": node.data,
+            "body_template": getattr(node, 'body_template', {}),
             "created_at": node.created_at,
             "updated_at": node.updated_at
         }
@@ -277,7 +281,8 @@ async def create_node(
         path=node.path,
         input=node.input,
         output=node.output,
-        data=node.data
+        data=node.data,
+        body_template=node.body_template
     )
     
     return {
@@ -289,6 +294,7 @@ async def create_node(
         "input": new_node.input,
         "output": new_node.output,
         "data": new_node.data,
+        "body_template": new_node.body_template,
         "created_at": new_node.created_at,
         "updated_at": new_node.updated_at
     }
@@ -320,6 +326,8 @@ async def update_node(
             node.output = update.output
         if update.data is not None:
             node.data = update.data
+        if update.body_template is not None:
+            node.body_template = update.body_template
         
         node.save()
         
@@ -332,6 +340,7 @@ async def update_node(
             "input": node.input,
             "output": node.output,
             "data": node.data,
+            "body_template": getattr(node, 'body_template', {}),
             "created_at": node.created_at,
             "updated_at": node.updated_at
         }

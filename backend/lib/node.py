@@ -54,21 +54,49 @@ class NodeExecutor:
         
         return prepared
     
+    def get_nested_value(self, data: Any, path: str) -> Any:
+        """Get a nested value from data using dot notation (e.g., 'messages.0.content.0')"""
+        try:
+            current = data
+            for key in path.split('.'):
+                if isinstance(current, dict):
+                    current = current[key]
+                elif isinstance(current, list):
+                    # Handle array indices
+                    index = int(key)
+                    current = current[index]
+                else:
+                    return None
+            return current
+        except (KeyError, IndexError, ValueError, TypeError):
+            return None
+    
     def substitute_variables(self, template: Any, context: Dict[str, Any]) -> Any:
         """Recursively substitute variables in templates"""
         if isinstance(template, str):
-            # Replace $VARIABLE_NAME with actual values
-            def replace_var(match):
-                var_name = match.group(1)
-                if var_name in context:
-                    return str(context[var_name])
-                # Check environment variables
-                env_value = os.getenv(var_name)
+            # Handle case where entire string is just a variable (preserve type)
+            if re.match(r'^\$([a-zA-Z_][a-zA-Z0-9_.]*)$', template):
+                var_path = template[1:]  # Remove the $
+                value = self.get_nested_value(context, var_path)
+                if value is not None:
+                    return value
+                env_value = os.getenv(var_path)
                 if env_value:
                     return env_value
-                return match.group(0)  # Return original if not found
+                return template
             
-            return re.sub(r'\$([A-Z_][A-Z0-9_]*)', replace_var, template)
+            # Handle string interpolation (convert to string)
+            def replace_var_str(match):
+                var_path = match.group(1)
+                value = self.get_nested_value(context, var_path)
+                if value is not None:
+                    return str(value)
+                env_value = os.getenv(var_path)
+                if env_value:
+                    return env_value
+                return match.group(0)
+            
+            return re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_.]*)', replace_var_str, template)
         
         elif isinstance(template, dict):
             return {k: self.substitute_variables(v, context) for k, v in template.items()}
@@ -113,11 +141,21 @@ class NodeExecutor:
         # Prepare body
         body = None
         if self.connector.method in ['POST', 'PUT', 'PATCH']:
-            if self.connector.body:
+            # Check if node has a custom body template
+            if hasattr(self.node, 'body_template') and self.node.body_template:
+                # Use node-specific body template
+                body = self.substitute_variables(self.node.body_template, prepared_input)
+            elif self.connector.body:
+                # Use connector body as template and substitute variables
                 body = self.substitute_variables(self.connector.body, prepared_input)
             else:
-                # Use input data as body
-                body = {"input": prepared_input}  # Wrap in input object for Replicate API
+                # Default behavior: check if this looks like a Replicate API
+                if 'replicate.com' in self.connector.base_url.lower():
+                    # Replicate APIs expect data wrapped in "input" object
+                    body = {"input": prepared_input}
+                else:
+                    # Other APIs (like Anthropic) expect data at root level
+                    body = prepared_input
         
         logger.info(f"Request method: {self.connector.method}")
         logger.info(f"Request URL: {url}")

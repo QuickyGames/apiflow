@@ -82,6 +82,24 @@ Name: Flux Pro
 Description: Flux Pro text to image generation.
 Connector: Replicate
 Path: /models/black-forest-labs/flux-pro/predictions
+Body Template:
+```json
+{
+  "input": {
+    "steps": "$steps",
+    "width": "$width",
+    "height": "$height",
+    "prompt": "$prompt",
+    "guidance": "$guidance",
+    "interval": "$interval",
+    "aspect_ratio": "$aspect_ratio",
+    "output_format": "$output_format",
+    "output_quality": "$output_quality",
+    "safety_tolerance": "$safety_tolerance",
+    "prompt_upsampling": "$prompt_upsampling"
+  }
+}
+```
 Input Schema:
 ```json
 [
