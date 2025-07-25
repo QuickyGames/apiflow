@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { api, type Workflow } from '$lib/api';
   import Modal from '$lib/components/Modal.svelte';
+	import WorkflowBuilder from '$lib/components/workflow/WorkflowBuilder.svelte';
   
   let workflows: Workflow[] = [];
   let loading = true;
@@ -224,7 +225,18 @@
   onClose={handleCancel}
 >
   {#if editingWorkflow}
-    <form on:submit|preventDefault={handleSubmit} class="space-y-6">
+    <div class="space-y-6">
+      <WorkflowBuilder 
+        initialWorkflow={editingWorkflow.nodes}
+        on:workflowChange={(e) => {
+          if (editingWorkflow) {
+            editingWorkflow.nodes = e.detail;
+            workflowJson = JSON.stringify(editingWorkflow.nodes, null, 2);
+          }
+        }}
+      />
+      
+      <form on:submit|preventDefault={handleSubmit} class="space-y-6">
       <div>
         <label for="name" class="block text-sm font-medium text-gray-700">
           Name
@@ -282,6 +294,7 @@
         </button>
       </div>
     </form>
+    </div>
   {/if}
 </Modal>
 
