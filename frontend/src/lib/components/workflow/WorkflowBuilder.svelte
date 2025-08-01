@@ -1,10 +1,13 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import { api, type Node as ApiNode } from '$lib/api';
   
   // Props
   export let initialWorkflow: any = null;
   export let onworkflowchange: ((workflow: any) => void) | undefined = undefined;
+  
+  // Event dispatcher
+  const dispatch = createEventDispatcher();
   
   // State
   let availableNodes: ApiNode[] = [];
@@ -455,7 +458,13 @@
       }
     };
     
+    // Call the callback prop if provided
     onworkflowchange?.(workflow);
+    
+    // Also dispatch the event for Svelte event handling
+    dispatch('workflowChange', workflow);
+    
+    console.log('Workflow exported:', workflow);
   }
   
   // Get available outputs for mapping

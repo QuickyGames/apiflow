@@ -15,10 +15,36 @@ class WorkflowExecutor:
     
     def evaluate_expression(self, expr: str, context: Dict[str, Any]) -> Any:
         """Safely evaluate a JavaScript-like expression"""
-        # Create a safe evaluation context
+        # Create a safe evaluation context with proper object access
+        class SafeDict(dict):
+            """A dict that allows attribute access like JavaScript objects"""
+            def __getattr__(self, name):
+                try:
+                    return self[name]
+                except KeyError:
+                    # Provide helpful error message
+                    available_keys = list(self.keys())
+                    raise AttributeError(f"'{name}' not found. Available keys: {available_keys}")
+        
+        def make_safe_dict(obj):
+            """Recursively convert dicts to SafeDict for attribute access"""
+            if isinstance(obj, dict):
+                safe_obj = SafeDict()
+                for key, value in obj.items():
+                    safe_obj[key] = make_safe_dict(value)
+                return safe_obj
+            elif isinstance(obj, list):
+                return [make_safe_dict(item) for item in obj]
+            else:
+                return obj
+        
+        # Convert results to allow attribute access
+        safe_results = make_safe_dict(context.get('results', {}))
+        safe_flow_input = make_safe_dict(context.get('flow_input', {}))
+        
         safe_context = {
-            'flow_input': context.get('flow_input', {}),
-            'results': context.get('results', {}),
+            'flow_input': safe_flow_input,
+            'results': safe_results,
             'true': True,
             'false': False,
             'null': None
@@ -29,9 +55,28 @@ class WorkflowExecutor:
         
         try:
             # Use eval with restricted globals
-            return eval(expr, {"__builtins__": {}}, safe_context)
+            result = eval(expr, {"__builtins__": {}}, safe_context)
+            return result
         except Exception as e:
-            raise ValueError(f"Failed to evaluate expression '{expr}': {str(e)}")
+            # Provide better error messages for common issues
+            error_msg = str(e)
+            
+            # Check if it's trying to access a field that doesn't exist
+            if ("has no attribute" in error_msg or "not found" in error_msg) and "results." in expr:
+                # Extract the node ID and field being accessed
+                import re
+                match = re.search(r'results\.([^.]+)\.([^.]+)', expr)
+                if match:
+                    node_id, field = match.groups()
+                    available_results = context.get('results', {})
+                    if node_id in available_results:
+                        available_fields = list(available_results[node_id].keys()) if isinstance(available_results[node_id], dict) else []
+                        error_msg = f"Field '{field}' not found in results.{node_id}. Available fields: {available_fields}. Full result: {available_results[node_id]}"
+                    else:
+                        available_nodes = list(available_results.keys())
+                        error_msg = f"Node '{node_id}' not found in results. Available nodes: {available_nodes}"
+            
+            raise ValueError(f"Failed to evaluate expression '{expr}': {error_msg}")
     
     def substitute_variables(self, template: Any, context: Dict[str, Any]) -> Any:
         """Recursively substitute variables in templates (similar to node.py)"""
