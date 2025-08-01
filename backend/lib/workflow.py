@@ -33,6 +33,64 @@ class WorkflowExecutor:
         except Exception as e:
             raise ValueError(f"Failed to evaluate expression '{expr}': {str(e)}")
     
+    def substitute_variables(self, template: Any, context: Dict[str, Any]) -> Any:
+        """Recursively substitute variables in templates (similar to node.py)"""
+        import re
+        
+        def get_nested_value(data: Any, path: str) -> Any:
+            """Get a nested value from data using dot notation"""
+            try:
+                current = data
+                for key in path.split('.'):
+                    if isinstance(current, dict):
+                        current = current[key]
+                    elif isinstance(current, list):
+                        index = int(key)
+                        current = current[index]
+                    else:
+                        return None
+                return current
+            except (KeyError, IndexError, ValueError, TypeError):
+                return None
+        
+        if isinstance(template, str):
+            # Handle case where entire string is just a variable (preserve type)
+            if re.match(r'^\$([a-zA-Z_][a-zA-Z0-9_.]*)$', template):
+                var_path = template[1:]  # Remove the $
+                value = get_nested_value(context, var_path)
+                if value is not None:
+                    return value
+                return template
+            
+            # Handle ${variable} syntax (preserve type for full string match)
+            if re.match(r'^\$\{([a-zA-Z_][a-zA-Z0-9_.]*)\}$', template):
+                var_path = re.match(r'^\$\{([a-zA-Z_][a-zA-Z0-9_.]*)\}$', template).group(1)
+                value = get_nested_value(context, var_path)
+                if value is not None:
+                    return value
+                return template
+            
+            # Handle string interpolation (convert to string)
+            def replace_var_str(match):
+                var_path = match.group(1)
+                value = get_nested_value(context, var_path)
+                if value is not None:
+                    return str(value)
+                return match.group(0)
+            
+            # Handle both $variable and ${variable} syntax in string interpolation
+            result = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_.]*)', replace_var_str, template)
+            result = re.sub(r'\$\{([a-zA-Z_][a-zA-Z0-9_.]*)\}', replace_var_str, result)
+            return result
+        
+        elif isinstance(template, dict):
+            return {k: self.substitute_variables(v, context) for k, v in template.items()}
+        
+        elif isinstance(template, list):
+            return [self.substitute_variables(item, context) for item in template]
+        
+        return template
+    
     def transform_input(self, transforms: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Apply input transformations"""
         result = {}
@@ -42,15 +100,17 @@ class WorkflowExecutor:
                 transform_type = transform.get('type', 'static')
                 
                 if transform_type == 'static':
-                    result[key] = transform.get('value')
+                    # Apply variable substitution to static values
+                    static_value = transform.get('value')
+                    result[key] = self.substitute_variables(static_value, context)
                 elif transform_type == 'javascript':
                     expr = transform.get('expr', '')
                     result[key] = self.evaluate_expression(expr, context)
                 else:
                     result[key] = transform
             else:
-                # Direct value
-                result[key] = transform
+                # Direct value - also apply variable substitution
+                result[key] = self.substitute_variables(transform, context)
         
         return result
     

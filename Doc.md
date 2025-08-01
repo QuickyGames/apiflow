@@ -139,13 +139,33 @@ output:
                 "value": {
                     "type": "script",
                     "path": "connector/node_path",
-                    "input_transforms": {}
+                    "input_transforms": {
+                        "input_name": {
+                            "type": "static",
+                            "value": "static value or ${flow_input.variable}"
+                        },
+                        "another_input": {
+                            "type": "javascript",
+                            "expr": "results.previous_node.output_field"
+                        }
+                    }
                 }
             }
         ]
     }
 }
 ```
+
+**Input Transform Types:**
+
+1. **Static Values**: Use `type: "static"` with `value` field
+   - Supports variable substitution with `${variable}` or `$variable` syntax
+   - Examples: `"${flow_input.user_input}"`, `"Hello ${flow_input.name}"`
+
+2. **Dynamic Expressions**: Use `type: "javascript"` with `expr` field
+   - JavaScript-like expressions evaluated at runtime
+   - Access to `flow_input` (workflow input) and `results` (previous node outputs)
+   - Examples: `"results.node1.output"`, `"flow_input.condition === 'option1'"`
 
 ## Json API
 Each connector,node, and workflow can be declared through a JSON API.

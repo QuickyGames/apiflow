@@ -259,7 +259,7 @@
     <div class="space-y-6">
       <WorkflowBuilder
         initialWorkflow={editingWorkflow.nodes || createDefaultNodes()}
-        on:workflowChange={(e) => {
+        on:workflowChange={(e: CustomEvent) => {
           if (editingWorkflow) {
             editingWorkflow.nodes = e.detail || createDefaultNodes();
             workflowJson = JSON.stringify(editingWorkflow.nodes, null, 2);

@@ -85,6 +85,17 @@ class NodeExecutor:
                     return env_value
                 return template
             
+            # Handle ${variable} syntax (preserve type for full string match)
+            if re.match(r'^\$\{([a-zA-Z_][a-zA-Z0-9_.]*)\}$', template):
+                var_path = re.match(r'^\$\{([a-zA-Z_][a-zA-Z0-9_.]*)\}$', template).group(1)
+                value = self.get_nested_value(context, var_path)
+                if value is not None:
+                    return value
+                env_value = os.getenv(var_path)
+                if env_value:
+                    return env_value
+                return template
+            
             # Handle string interpolation (convert to string)
             def replace_var_str(match):
                 var_path = match.group(1)
@@ -96,7 +107,10 @@ class NodeExecutor:
                     return env_value
                 return match.group(0)
             
-            return re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_.]*)', replace_var_str, template)
+            # Handle both $variable and ${variable} syntax in string interpolation
+            result = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_.]*)', replace_var_str, template)
+            result = re.sub(r'\$\{([a-zA-Z_][a-zA-Z0-9_.]*)\}', replace_var_str, result)
+            return result
         
         elif isinstance(template, dict):
             return {k: self.substitute_variables(v, context) for k, v in template.items()}
