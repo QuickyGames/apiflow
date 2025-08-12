@@ -2,6 +2,5 @@ fastapi
 uvicorn[standard]
 pydantic
 peewee
-psycopg2-binary
 requests
 python-dotenv

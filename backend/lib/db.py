@@ -2,21 +2,16 @@ import os
 import json
 from datetime import datetime
 from peewee import *
-from playhouse.postgres_ext import PostgresqlExtDatabase, JSONField
+from playhouse.sqlite_ext import JSONField
 
 # Database configuration
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@db:5432/apiflow')
+DATABASE_PATH = os.getenv('DATABASE_PATH', '/app/data/apiflow.db')
 
-# Parse database URL
-import urllib.parse
-url = urllib.parse.urlparse(DATABASE_URL)
-db = PostgresqlExtDatabase(
-    url.path[1:],
-    user=url.username,
-    password=url.password,
-    host=url.hostname,
-    port=url.port
-)
+# Ensure the directory exists
+os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+
+# SQLite database
+db = SqliteDatabase(DATABASE_PATH)
 
 class BaseModel(Model):
     class Meta:
@@ -105,19 +100,20 @@ def run_migrations():
     """Run database migrations"""
     try:
         # Check if the 'path' column exists in the Node table
-        cursor = db.execute_sql("SELECT column_name FROM information_schema.columns WHERE table_name='node' AND column_name='path';")
-        if not cursor.fetchone():
+        cursor = db.execute_sql("PRAGMA table_info(node);")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'path' not in columns:
             print("Adding 'path' column to Node table...")
-            db.execute_sql("ALTER TABLE node ADD COLUMN path VARCHAR(255) DEFAULT '';")
+            db.execute_sql("ALTER TABLE node ADD COLUMN path TEXT DEFAULT '';")
             print("Successfully added 'path' column to Node table.")
         else:
             print("Column 'path' already exists in Node table.")
             
         # Check if the 'body_template' column exists in the Node table
-        cursor = db.execute_sql("SELECT column_name FROM information_schema.columns WHERE table_name='node' AND column_name='body_template';")
-        if not cursor.fetchone():
+        if 'body_template' not in columns:
             print("Adding 'body_template' column to Node table...")
-            db.execute_sql("ALTER TABLE node ADD COLUMN body_template JSON DEFAULT '{}';")
+            db.execute_sql("ALTER TABLE node ADD COLUMN body_template TEXT DEFAULT '{}';")
             print("Successfully added 'body_template' column to Node table.")
         else:
             print("Column 'body_template' already exists in Node table.")
